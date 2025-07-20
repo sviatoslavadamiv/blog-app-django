@@ -11,11 +11,14 @@ def post_list(request) -> HttpResponse:
         {'posts': posts},
     )
 
-def post_detail(request, id) -> HttpResponse:
+def post_detail(request, year, month, day, post) -> HttpResponse:
     post = get_object_or_404(
         Post,
-        id=id,
-        status=Post.Status.PUBLISHED
+        status=Post.Status.PUBLISHED,
+        slug=post,
+        publish__year=year,
+        publish__month=month,
+        publish__day=day,
     )
     return render(
         request,
