@@ -4,6 +4,7 @@ from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_POST
 from django.views.generic import ListView, DetailView
 from django.core.mail import send_mail
+from django.db.models import Count
 
 from .forms import EmailPostForm, CommentForm
 from .models import Post
@@ -47,12 +48,22 @@ class PostDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super(PostDetailView, self).get_context_data(**kwargs)
+
         # List of active comments for this post
         comments = self.get_object().comments.filter(active=True)
         # Form for user to comment
         form = CommentForm()
+
+        # List of similar posts
+        post_tags_ids = self.get_object().tags.values_list('id', flat=True)
+        similar_posts = Post.published.filter(tags__in=post_tags_ids).exclude(id=self.get_object().id)
+        similar_posts = similar_posts.annotate(
+            same_tags=Count('tags')
+        ).order_by('-same_tags', '-publish')[:4]
+
         context["comments"] = comments
         context["form"] = form
+        context["similar_posts"] = similar_posts
         return context
 
 
